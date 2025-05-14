@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
 
-def load_mnist_data():
+def load_mnist_data(batch_size=64):
     transform = transforms.Compose(
         [
             # transforming the data (images) to pytorch tensors
@@ -20,9 +20,7 @@ def load_mnist_data():
         root="./data", train=False, download=True, transform=transform
     )
 
-    train_dataloader = DataLoader(
-        train_dataset, batch_size=len(train_dataset), shuffle=True
-    )
-    test_dataloader = DataLoader(
-        test_dataset, batch_size=len(test_dataset), shuffle=True
-    )
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+    return train_dataloader, test_dataloader
