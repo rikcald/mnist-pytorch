@@ -1,7 +1,7 @@
 import torch
 from src.load_data import load_mnist_data
 from src.model import Mnist_Logistic, Mnist_CNN
-from src.train import fit
+from src.train import fit, evaluate
 import torch.nn.functional as F
 from torch import optim
 
@@ -17,7 +17,9 @@ def main():
     model = Mnist_CNN()
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
-    fit(10, model, F.cross_entropy, optimizer, train_loader, valid_loader)
+    fit(5, model, F.cross_entropy, optimizer, train_loader, valid_loader)
+    test_loss = evaluate(model, F.cross_entropy, test_loader)
+    print(f"Test_loss : {test_loss:.4f}")
 
 
 if __name__ == "__main__":
