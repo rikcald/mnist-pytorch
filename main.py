@@ -1,5 +1,20 @@
+import torch
+from src.load_data import load_mnist_data
+from src.model import Mnist_Logistic
+from src.train import fit
+import torch.nn.functional as F
+from torch import optim
+
+
 def main():
-    print("test")
+    torch.manual_seed(42)
+    train_loader, valid_loader, test_loader = load_mnist_data()
+    print(f"MNIST loaded with: {len(train_loader)} batches")
+
+    model = Mnist_Logistic()
+    optimizer = optim.SGD(model.parameters(), lr=0.05)
+
+    fit(5, model, F.cross_entropy, optimizer, train_loader, valid_loader)
 
 
 if __name__ == "__main__":
