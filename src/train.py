@@ -1,39 +1,41 @@
 import torch
-from torch import optim
-from model import Mnist_Logistic
-from load_data import load_mnist_data
 from tqdm import tqdm
-import torch.nn.functional as F
-
-# Manually setting a seed will ensure that random values will be the same
-torch.manual_seed(42)
-
-# Setting our model as Mnist logistic - > softmax regression
-model = Mnist_Logistic()
-optimizer = optim.SGD(model.parameters(), lr=0.05)
-loss_function = F.cross_entropy
+import numpy as np
 
 
-train_loader, valid_loader, test_loader = load_mnist_data()
-print(f"MNIST loaded with: {len(train_loader)} batches")
+def step(model, loss_func, xb, yb, opt=None):
+    pred = model(xb)
+    loss = loss_func(pred, yb)
 
-epochs = 5
-batch_size = train_loader.batch_size
-
-for epoch in range(epochs):
-    # model.train()
-    for xb, yb in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}"):
-        pred = model(xb.view(-1, 784))
-        loss = loss_function(pred, yb)
-
+    # this condition skips the backprop if there is no optmizer (e.g. for a validation set loss function)
+    if opt is not None:
         loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-    # model.eval()
-    with torch.no_grad():
-        valid_loss = sum(
-            loss_function(model(xb.view(-1, 784)), yb) for xb, yb in valid_loader
-        ) / len(valid_loader)
-    print(
-        f"Epoch {epoch + 1}, Loss: {loss.item():.4f} , Validation Loss: {valid_loss:.4f}"
-    )
+        opt.step()
+        opt.zero_grad()
+
+    return loss.item(), len(xb)
+
+
+def fit(epochs, model, loss_function, optimizer, train_loader, valid_loader):
+    for epoch in range(epochs):
+        model.train()
+        for xb, yb in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}"):
+            xb_flat = xb.view(-1, 784)  # from [bs,1,28,28] to [bs,784]
+            loss, _ = step(model, loss_function, xb_flat, yb, optimizer)
+
+        model.eval()
+        with torch.no_grad():
+            # - step() returns (loss.item(), len(xb)) for each batch.
+            # - the input to zip() is [(loss1, size1), (loss2, size2), ...].
+            # - the output is two tuples: (loss1, loss2, ...) and (size1, size2, ...).
+            losses, batch_sizes = zip(
+                *[
+                    step(model, loss_function, xb.view(-1, 784), yb)
+                    for xb, yb in valid_loader
+                ]
+            )
+            # Using NumPy for weighted average since losses and batch sizes are Python floats and ints, not PyTorch tensors
+            valid_loss = np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes)
+        print(
+            f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f}"
+        )
