@@ -24,18 +24,23 @@ def fit(epochs, model, loss_function, optimizer, train_loader, valid_loader):
             loss, _ = step(model, loss_function, xb_flat, yb, optimizer)
 
         model.eval()
-        with torch.no_grad():
-            # - step() returns (loss.item(), len(xb)) for each batch.
-            # - the input to zip() is [(loss1, size1), (loss2, size2), ...].
-            # - the output is two tuples: (loss1, loss2, ...) and (size1, size2, ...).
-            losses, batch_sizes = zip(
-                *[
-                    step(model, loss_function, xb.view(-1, 784), yb)
-                    for xb, yb in valid_loader
-                ]
-            )
-            # Using NumPy for weighted average since losses and batch sizes are Python floats and ints, not PyTorch tensors
-            valid_loss = np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes)
+        valid_loss = evaluate(model, loss_function, valid_loader)
         print(
             f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f}"
         )
+
+
+def evaluate(model, loss_function, data_loader):
+    model.eval()
+    with torch.no_grad():
+        # - step() returns (loss.item(), len(xb)) for each batch.
+        # - the input to zip() is [(loss1, size1), (loss2, size2), ...].
+        # - the output is two tuples: (loss1, loss2, ...) and (size1, size2, ...).
+        losses, batch_sizes = zip(
+            *[
+                step(model, loss_function, xb.view(-1, 784), yb)
+                for xb, yb in data_loader
+            ]
+        )
+        # Using NumPy for weighted average since losses and batch sizes are Python floats and ints, not PyTorch tensors
+        return np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes)
