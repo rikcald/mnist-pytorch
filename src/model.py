@@ -2,6 +2,19 @@ from torch import nn
 import torch.nn.functional as F
 
 
+class Lambda(nn.Module):
+    def __init__(self, func):
+        super().__init__()
+        self.func = func
+
+    def forward(self, x):
+        return self.func(x)
+
+
+def preprocess(x):
+    return x.view(-1, 1, 28, 28)
+
+
 class Mnist_Logistic(nn.Module):
     def __init__(self):
         super().__init__()
@@ -26,3 +39,6 @@ class Mnist_CNN(nn.Module):
         xb = F.relu(self.conv3(xb))
         xb = F.avg_pool2d(xb, 4)
         return xb.view(xb.size(0), -1)
+
+
+# esercizio: dopo aver seguito il notebook, usare la lambda function per eveitare di dover fare .view (-1,784) in train.py
