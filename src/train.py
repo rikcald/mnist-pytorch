@@ -25,7 +25,7 @@ def fit(epochs, model, loss_function, optimizer, train_loader, valid_loader):
         model.eval()
         valid_loss, accuracy = evaluate(model, loss_function, valid_loader)
         print(
-            f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f} , Accuracy : {accuracy:.4f}"
+            f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f} , Accuracy : {accuracy * 100:.2f}%"
         )
 
 
@@ -46,6 +46,9 @@ def evaluate(model, loss_function, data_loader):
         return np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes), np.sum(
             total_accuracy
         ) / len(total_accuracy)
+        print(
+            f"Test_loss : {np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes):.4f} | Accuracy : {(np.sum(total_accuracy) / len(total_accuracy)) * 100:.2f}%"
+        )
 
 
 def evaluate_accuracy(pred, yb):
@@ -54,7 +57,7 @@ def evaluate_accuracy(pred, yb):
     # incorrect_predictions = len(yb) - correct_predictions_perBatch
     accuracy_perBatch = correct_predictions_perBatch / len(yb)
     print(
-        f"correct predictions : {correct_predictions_perBatch} / {len(yb)} | accuracy per batch : {accuracy_perBatch:.4f}"
+        f"correct predictions : {correct_predictions_perBatch} / {len(yb)} | accuracy per batch : {accuracy_perBatch * 100:.2f}%"
     )
     return accuracy_perBatch
 

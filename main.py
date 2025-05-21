@@ -34,15 +34,9 @@ def main():
     optimizer = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
 
     # training and testing
-    test_loss_beforeTraining, accuracy_beforeTraining = evaluate(
-        model, F.cross_entropy, test_loader
-    )
-    print(
-        f"Test_loss : {test_loss_beforeTraining:.4f} | Accuracy : {accuracy_beforeTraining:.4f}"
-    )
+    test_loss_bt, accuracy_bt = evaluate(model, F.cross_entropy, test_loader)
     fit(5, model, F.cross_entropy, optimizer, train_loader, valid_loader)
     test_loss, accuracy = evaluate(model, F.cross_entropy, test_loader)
-    print(f"Test_loss : {test_loss:.4f} | Accuracy : {accuracy:.4f}")
 
 
 if __name__ == "__main__":
