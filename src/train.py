@@ -12,9 +12,7 @@ def step(model, loss_func, xb, yb, opt=None):
         loss.backward()
         opt.step()
         opt.zero_grad()
-    else:
-        accuracy(pred, yb)
-    return loss.item(), len(xb)
+    return loss.item(), len(xb), pred
 
 
 def fit(epochs, model, loss_function, optimizer, train_loader, valid_loader):
@@ -22,29 +20,35 @@ def fit(epochs, model, loss_function, optimizer, train_loader, valid_loader):
         model.train()
         for xb, yb in tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}"):
             xb_flat = xb.view(-1, 784)  # from [bs,1,28,28] to [bs,784]
-            loss, _ = step(model, loss_function, xb_flat, yb, opt=optimizer)
+            loss, _, _ = step(model, loss_function, xb_flat, yb, opt=optimizer)
 
         model.eval()
-        valid_loss = evaluate(model, loss_function, valid_loader)
+        valid_loss, accuracy = evaluate(model, loss_function, valid_loader)
         print(
-            f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f}"
+            f"Epoch {epoch + 1}, Loss: {loss:.4f} , Validation Loss: {valid_loss:.4f} , Accuracy : {accuracy:.4f}"
         )
 
 
+# evaluate will return weighted average of the loss and the accuracy of an entire epoch
 def evaluate(model, loss_function, data_loader):
     model.eval()
     with torch.no_grad():
         losses = []
         batch_sizes = []
+        total_accuracy = []
         for xb, yb in data_loader:
-            loss, batch_size = step(model, loss_function, xb.view(-1, 784), yb)
+            # evaluating weighted average loss
+            loss, batch_size, pred = step(model, loss_function, xb.view(-1, 784), yb)
             losses.append(loss)
             batch_sizes.append(batch_size)
-        # Using NumPy for weighted average since losses and batch sizes are Python floats and ints, not PyTorch tensors
-        return np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes)
+            total_accuracy.append(evaluate_accuracy(pred, yb))
+        #  Using NumPy for weighted average since losses and batch sizes are Python floats and ints, not PyTorch tensors
+        return np.sum(np.multiply(losses, batch_sizes)) / np.sum(batch_sizes), np.sum(
+            total_accuracy
+        ) / len(total_accuracy)
 
 
-def accuracy(pred, yb):
+def evaluate_accuracy(pred, yb):
     predicted_classes_perBatch = pred.argmax(dim=1)
     correct_predictions_perBatch = (predicted_classes_perBatch == yb).sum().item()
     # incorrect_predictions = len(yb) - correct_predictions_perBatch
@@ -52,7 +56,7 @@ def accuracy(pred, yb):
     print(
         f"correct predictions : {correct_predictions_perBatch} / {len(yb)} | accuracy per batch : {accuracy_perBatch:.4f}"
     )
-    # return correct_predictions_perBatch
+    return accuracy_perBatch
 
 
 # TODO riportare la media di correct predictions e accuracy
